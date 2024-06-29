@@ -3,7 +3,7 @@ const dbClient = require('../utils/db');
 
 
 class AppController {
-    async getStatus(req, res) {
+    static async getStatus(req, res) {
         const redisStatus = await redisClient.isAlive();
         const dbStatus = await dbClient.isAlive();
 
@@ -13,7 +13,7 @@ class AppController {
         });
     }
 
-    async getStats(req, res) {
+    static async getStats(req, res) {
         const usersCount = await dbClient.nbUsers();
         const filesCount = await dbClient.nbFiles();
 
