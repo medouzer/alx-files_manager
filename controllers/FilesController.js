@@ -51,6 +51,10 @@ class FilesController {
             return res.status(500).send({ error: 'Error saving file' });
         }
 
+        if (type === 'image') {
+            await fs.promises.writeFile(filePath, fileData, { flag: 'w+', encoding: 'binary' });
+        }
+
         fileDocument.localPath = filePath;
 
         const result = await collection.insertOne(fileDocument);
