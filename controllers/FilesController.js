@@ -5,10 +5,9 @@ import fs from 'fs';
 import path from 'path';
 
 
-const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
-
 class FilesController {
     static async postUpload(req, res) {
+        const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
         const token = req.headers['x-token'];
         if (!token) return res.status(401).send({ error: 'Unauthorized' });
         const key = `auth_${token}`;
