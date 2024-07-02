@@ -16,14 +16,20 @@ class FilesController {
         if (!userId) return res.status(401).send({ error: 'Unauthorized' });
         const { name, type, parentId = 0, isPublic = false, data } = req.body;
         if (!name) return res.status(400).send({ error: 'Missing name' });
-        if (!['folder', 'file', 'image'].includes(type)) return res.status(400).send({ error: 'Missing type' });
+        if (!type || !['folder', 'file', 'image'].includes(type)) return res.status(400).send({ error: 'Missing type' });
         if (!data && type !== 'folder') return res.status(400).send({ error: 'Missing data' });
 
         const collection = dbClient.db.collection('files');
+        // if (parentId !== 0) {
+        //     const parent = await collection.findOne({ _id: parentId });
+        //     if (!parent) return res.status(400).send({ error: 'Parent not found' });
+        //     if (parent.type !== 'folder') return res.status(400).send({ error: 'Parent is not a folder' });
+        // }
         if (parentId !== 0) {
-            const parent = await collection.findOne({ _id: parentId });
-            if (!parent) return res.status(400).send({ error: 'Parent not found' });
-            if (parent.type !== 'folder') return res.status(400).send({ error: 'Parent is not a folder' });
+            const parentFileArray = await dbClient.files.find({ _id: ObjectID(parentId) }).toArray();
+            if (parentFileArray.length === 0) return response.status(400).json({ error: 'Parent not found' });
+            const file = parentFileArray[0];
+            if (file.type !== 'folder') return response.status(400).json({ error: 'Parent is not a folder' });
         }
         const fileDocument = {
             userId: ObjectID(userId),
