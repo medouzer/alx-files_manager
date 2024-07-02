@@ -45,7 +45,7 @@ class FilesController {
                 fs.mkdirSync(FOLDER_PATH, { recursive: true });
             }
 
-            fs.writeFileSync(filePath, fileData.toString(), { flag: 'w+' });
+            await fs.writeFileSync(filePath, fileData.toString(), { flag: 'w+' });
         } catch (err) {
             console.error(err);
             return res.status(500).send({ error: 'Error saving file' });
