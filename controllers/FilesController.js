@@ -75,18 +75,11 @@ class FilesController {
 
         const fileId = req.params.id;
         const collection = dbClient.db.collection('files');
-        const file = await collection.findOne({ _id: ObjectID(fileId), userId: userId._id }));
+        const file = await collection.findOne({ _id: fileId, userId });
 
         if (!file) return res.status(404).send({ error: 'Not found' });
 
-        return response.send({
-            id: file._id,
-            userId: file.userId,
-            name: file.name,
-            type: file.type,
-            isPublic: file.isPublic,
-            parentId: file.parentId,
-        });
+        return res.status(200).send(file);
     }
 
     static async getIndex(req, res) {
