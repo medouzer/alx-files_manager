@@ -1,6 +1,6 @@
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import { ObjectID } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { mkdir, writeFile, readFileSync } from 'fs';
 
@@ -87,9 +87,9 @@ class FilesController {
         const userId = await redisClient.get(`auth_${token}`);
         if (!userId) return res.status(401).send({ error: 'Unauthorized' });
 
-        const fileId = req.params.id;
+        const fileId = req.params.id || '';
         const collection = dbClient.db.collection('files');
-        const file = await collection.findOne({ _id: fileId, userId });
+        const file = await collection.findOne({ _id: ObjectId(fileId), userId: userId });
 
         if (!file) return res.status(404).send({ error: 'Not found' });
 
@@ -107,7 +107,8 @@ class FilesController {
         const pageSize = 20;
         const skip = page * pageSize;
 
-        const files = await dbClient.db.collection('files').find({ userId, parentId })
+        const collection = dbClient.db.collection('files');
+        const files = await collection.find({ userId, parentId })
             .skip(skip)
             .limit(pageSize)
             .toArray();
