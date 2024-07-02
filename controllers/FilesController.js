@@ -74,11 +74,19 @@ class FilesController {
         if (!userId) return res.status(401).send({ error: 'Unauthorized' });
 
         const fileId = req.params.id;
-        const file = await dbClient.db.collection('files').findOne({ _id: fileId, userId });
+        const collection = dbClient.db.collection('files');
+        const file = await collection.findOne({ _id: ObjectID(fileId), userId: userId._id }));
 
         if (!file) return res.status(404).send({ error: 'Not found' });
 
-        return res.status(200).send(file);
+        return response.send({
+            id: file._id,
+            userId: file.userId,
+            name: file.name,
+            type: file.type,
+            isPublic: file.isPublic,
+            parentId: file.parentId,
+        });
     }
 
     static async getIndex(req, res) {
