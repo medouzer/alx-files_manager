@@ -8,7 +8,7 @@ import path from 'path';
 
 class FilesController {
     static async postUpload(req, res) {
-        const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
+        const folder_path = process.env.FOLDER_PATH || '/tmp/files_manager';
         const token = req.headers['x-token'];
         if (!token) return res.status(401).send({ error: 'Unauthorized' });
         const key = `auth_${token}`;
@@ -30,7 +30,7 @@ class FilesController {
             name,
             type,
             isPublic,
-            parentId,
+            parentId: parentId === 0 ? parentId : ObjectID(parentId),
         };
         if (type === 'folder') {
             const result = await collection.insertOne(fileDocument);
@@ -38,14 +38,17 @@ class FilesController {
                 id: result.ops[0]._id, userId, name, type, isPublic, parentId,
             });
         }
-        const filePath = path.join(FOLDER_PATH, uuidv4());
+        const filePath = path.join(folder_path, uuidv4());
         const fileData = Buffer.from(data, 'base64');
         try {
-            if (!fs.existsSync(FOLDER_PATH)) {
-                fs.mkdirSync(FOLDER_PATH, { recursive: true });
+            if (!fs.existsSync(folder_path)) {
+                fs.mkdirSync(folder_path, { recursive: true });
             }
 
             await fs.writeFileSync(filePath, fileData.toString(), { flag: 'w+' });
+            await fs.readdirSync('/').forEach((file) => {
+                console.log(file);
+              });
         } catch (err) {
             console.error(err);
             return res.status(500).send({ error: 'Error saving file' });
