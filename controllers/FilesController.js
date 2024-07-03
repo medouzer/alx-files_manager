@@ -2,8 +2,12 @@ import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
-import { mkdir, writeFile, readFileSync } from 'fs';
-import { getMe } from './UsersController';
+import { mkdir, writeFile, existsSync } from 'fs';
+import mime from 'mime-types';
+import fs from 'fs';
+import Bull from 'bull';
+
+const fileQueue = new Bull('fileQueue');
 
 
 class FilesController {
@@ -70,6 +74,9 @@ class FilesController {
         });
         fileInsertData.localPath = filePath;
         await collection.insertOne(fileInsertData);
+        if (type === 'image') {
+            fileQueue.add({ userId, fileId: result.insertedId });
+        }
 
         return res.status(201).send({
         id: fileInsertData._id,
@@ -145,6 +152,29 @@ class FilesController {
         await collection.updateOne({ _id: ObjectId(fileId) }, { $set: { isPublic: false } });
         file = await collection.findOne({ _id: ObjectId(fileId), userId: userId });
         return res.status(200).send(file);
+    }
+
+    static async getFile(req, res) {
+        const token = req.headers['x-token'];
+        let userId;
+        if (token) {
+            userId = await redisClient.get(`auth_${token}`);
+        }
+        const fileId = req.params.id || '';
+        const collection = dbClient.db.collection('files');
+        const file = await collection.findOne({ _id: ObjectId(fileId) });
+        console.log(file);
+        if (!file) return res.status(404).send({ error: 'Not found' });
+        if (file.isPublic == false && (!userId || userId != file.userId) ) {
+            return res.status(404).send({ error: 'Not found' });
+        }
+        if (file.type == 'folder') return res.status(400).send({ error: 'A folder doesn\'t have content' });
+        if (!fs.existsSync(file.localPath)) {
+            return res.status(404).send({ error: 'Not found' });
+        }
+        const mimeType = mime.lookup(file.name) || 'application/octet-stream';
+        res.setHeader('Content-Type', mimeType);
+        fs.createReadStream(file.localPath).pipe(res);
     }
 }
 
